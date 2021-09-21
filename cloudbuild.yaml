@@ -1,0 +1,31 @@
+substitutions:
+  _REG_HOST: us-docker.pkg.dev
+  _PROJ_ID: id-me-build
+  _DEV_REPO: docker-dev
+  _APP: helloworld
+  _JID: ${BUILD_ID:0:8}
+
+options:
+     dynamic_substitutions: true
+
+# TODO(brett): Move this tooling to custom build image w/dedicated scripts.
+
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |-
+      set -eEu
+      IMG="${_REG_HOST}/${_PROJ_ID}/${_DEV_REPO}/${_APP}"
+      TAG="$$(date +%Y%m%d)-${_JID}"
+
+      echo "====> Building image"
+      docker build . \
+          -t "$$IMG:$$TAG" \
+          -t "$$IMG:latest" \
+
+      echo "====> Pushing image to ${_REG_HOST}"
+      for t in $$TAG latest; do
+          docker push "$$IMG:$$t"
+      done
