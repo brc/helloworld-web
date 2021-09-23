@@ -4,6 +4,9 @@ substitutions:
   _DEV_REPO: docker-dev
   _APP: helloworld
   _JID: ${BUILD_ID:0:8}
+  _SAVEFILE: /workspace/img-name
+  _REGION_US01: us-west2
+  _REGION_US02: us-east4
 
 options:
      dynamic_substitutions: true
@@ -11,6 +14,9 @@ options:
 # TODO(brett): Move this tooling to custom build image w/dedicated scripts.
 
 steps:
+  ###
+  ## Build Docker image
+  ##
   - name: "gcr.io/cloud-builders/docker"
     entrypoint: 'bash'
     args:
@@ -19,6 +25,10 @@ steps:
       set -eEu
       IMG="${_REG_HOST}/${_PROJ_ID}/${_DEV_REPO}/${_APP}"
       TAG="$$(date +%Y%m%d)-${_JID}"
+
+      # Save image name to disk for next step
+      echo "====> Caching image name to disk"
+      echo "$$IMG:$$TAG" >${_SAVEFILE}
 
       echo "====> Building image"
       docker build . \
@@ -29,3 +39,21 @@ steps:
       for t in $$TAG latest; do
           docker push "$$IMG:$$t"
       done
+
+  ###
+  ## Deploy image to dev
+  ##
+  - name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |-
+      set -eEu
+      echo "====> Reading image name from disk"
+      IMG="$$(cat ${_SAVEFILE})"
+
+      echo "====> Deploying image '$$IMG'"
+      gcloud run deploy "${_APP}-dev-pr${_PR_NUMBER}" \
+          --image="$$IMG" \
+          --region="${_REGION_US01}" \
+          --ingress=internal-and-cloud-load-balancing
