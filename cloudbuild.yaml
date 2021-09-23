@@ -3,13 +3,16 @@ substitutions:
   _PROJ_ID: id-me-build
   _DEV_REPO: docker-dev
   _APP: helloworld
-  _JID: ${BUILD_ID:0:8}
-  _SAVEFILE: /workspace/img-name
+
+  _IMG: ${_REG_HOST}/${_PROJ_ID}/${_DEV_REPO}/${_APP}
+  _TAG: ${_PR_NUMBER}
+
   _REGION_US01: us-west2
   _REGION_US02: us-east4
 
 options:
      dynamic_substitutions: true
+
 
 # TODO(brett): Move this tooling to custom build image w/dedicated scripts.
 
@@ -23,22 +26,14 @@ steps:
     - '-c'
     - |-
       set -eEu
-      IMG="${_REG_HOST}/${_PROJ_ID}/${_DEV_REPO}/${_APP}"
-      TAG="$$(date +%Y%m%d)-${_JID}"
-
-      # Save image name to disk for next step
-      echo "====> Caching image name to disk"
-      echo "$$IMG:$$TAG" >${_SAVEFILE}
-
       echo "====> Building image"
       docker build . \
-          -t "$$IMG:$$TAG" \
-          -t "$$IMG:latest" \
+          -t "${_IMG}:${_TAG}" \
+          -t "${_IMG}:latest" \
 
-      echo "====> Pushing image to ${_REG_HOST}"
-      for t in $$TAG latest; do
-          docker push "$$IMG:$$t"
-      done
+      echo "====> Pushing image"
+      docker push "${_IMG}:${_TAG}"
+      docker push "${_IMG}:latest"
 
   ###
   ## Deploy image to dev
@@ -49,11 +44,8 @@ steps:
     - '-c'
     - |-
       set -eEu
-      echo "====> Reading image name from disk"
-      IMG="$$(cat ${_SAVEFILE})"
-
-      echo "====> Deploying image '$$IMG'"
+      echo "====> Deploying image"
       gcloud run deploy "${_APP}-dev-pr${_PR_NUMBER}" \
-          --image="$$IMG" \
+          --image="${_IMG}:${_TAG}" \
           --region="${_REGION_US01}" \
           --ingress=internal-and-cloud-load-balancing
