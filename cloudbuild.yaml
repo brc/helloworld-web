@@ -1,10 +1,14 @@
+# TODO(brett): Move this tooling to custom build image w/dedicated scripts.
+
 substitutions:
   _REG_HOST: us-docker.pkg.dev
   _PROJ_ID: id-me-build
   _DEV_REPO: docker-dev
+  _PRD_REPO: docker-release
   _APP: helloworld
 
-  _IMG: ${_REG_HOST}/${_PROJ_ID}/${_DEV_REPO}/${_APP}
+  _DEV_IMG: ${_REG_HOST}/${_PROJ_ID}/${_DEV_REPO}/${_APP}
+  _PRD_IMG: ${_REG_HOST}/${_PROJ_ID}/${_PRD_REPO}/${_APP}
   _TAG: ${_PR_NUMBER}
 
   _REGION_US01: us-west2
@@ -13,8 +17,6 @@ substitutions:
 options:
      dynamic_substitutions: true
 
-
-# TODO(brett): Move this tooling to custom build image w/dedicated scripts.
 
 steps:
   ###
@@ -26,14 +28,19 @@ steps:
     - '-c'
     - |-
       set -eEu
+      if [ "${BRANCH_NAME}" = master ]; then
+          echo "====> Skipping build/push step for master branch."
+          exit 0
+      fi
+
       echo "====> Building image"
       docker build . \
-          -t "${_IMG}:${_TAG}" \
-          -t "${_IMG}:latest" \
+          -t "${_DEV_IMG}:${_TAG}" \
+          -t "${_DEV_IMG}:latest" \
 
       echo "====> Pushing image"
-      docker push "${_IMG}:${_TAG}"
-      docker push "${_IMG}:latest"
+      docker push "${_DEV_IMG}:${_TAG}"
+      docker push "${_DEV_IMG}:latest"
 
   ###
   ## Deploy image to dev
@@ -44,8 +51,51 @@ steps:
     - '-c'
     - |-
       set -eEu
-      echo "====> Deploying image"
+      if [ "${BRANCH_NAME}" = master ]; then
+          echo "====> Skipping dev deploy step for master branch."
+          exit 0
+      fi
+
+      echo "====> Deploying image '${_DEV_IMG}:${_TAG}"
       gcloud run deploy "${_APP}-dev-pr${_PR_NUMBER}" \
-          --image="${_IMG}:${_TAG}" \
+          --image="${_DEV_IMG}:${_TAG}" \
           --region="${_REGION_US01}" \
           --ingress=internal-and-cloud-load-balancing
+
+  ###
+  ## Promote image to release repo
+  ##
+  - name: "gcr.io/cloud-builders/gcloud"
+    entrypoint: 'bash'
+    args:
+    - '-c'
+    - |-
+      set -eEux
+      if [ "${BRANCH_NAME}" != master ]; then
+          echo "====> Skipping image promotion step for non-master branch."
+          exit 0
+      fi
+
+      echo "====> Finding last PR from commit log..."
+      pr_num="$$(git log -1 --pretty='format:%s' \
+          |grep -i 'pull request' \
+          |awk '{print $$4}' \
+          |sed 's/#//')"
+
+      if [ -z "$$pr_num" ]; then
+          echo "====> Did not find a PR# in HEAD!"
+          echo "====> Exiting."
+          exit 1
+      fi
+
+      echo "====> Promoting image '${_APP}:$$pr_num"
+      # Copy from dev repo to release repo
+      gcloud container images add-tag \
+          "${_DEV_IMG}:$$pr_num" \
+          "${_PRD_IMG}:$$pr_num" \
+
+      # Add a 'latest' tag to release repo
+      gcloud container images add-tag \
+          "${_PRD_IMG}:$$pr_num" \
+          "${_PRD_IMG}:latest" \
+
