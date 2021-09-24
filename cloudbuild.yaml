@@ -73,7 +73,7 @@ steps:
     - |-
       set -eEux
       if [ "${BRANCH_NAME}" != master ]; then
-          echo "====> Skipping image promotion step for non-master branch."
+          echo "====> Skipping production deployment for non-master branch."
           exit 0
       fi
 
@@ -100,3 +100,13 @@ steps:
           "${_PRD_IMG}:$$pr_num" \
           "${_PRD_IMG}:latest" \
 
+      # XXX Deploy to production
+      for region in ${_REGION_US01} ${_REGION_US02}; do
+        echo
+        echo "====> Deploying '${_PRD_IMG}:$$pr_num' to $$region"
+        gcloud run deploy "${_APP}-prod" \
+            --image="${_PRD_IMG}:$$pr_num" \
+            --region="$$region" \
+            --ingress=internal-and-cloud-load-balancing \
+            --allow-unauthenticated \
+      done
