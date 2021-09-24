@@ -60,7 +60,8 @@ steps:
       gcloud run deploy "${_APP}-dev-pr${_PR_NUMBER}" \
           --image="${_DEV_IMG}:${_TAG}" \
           --region="${_REGION_US01}" \
-          --ingress=internal-and-cloud-load-balancing
+          --ingress=internal-and-cloud-load-balancing \
+          --allow-unauthenticated \
 
   ###
   ## Promote image to release repo
