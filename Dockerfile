@@ -15,5 +15,5 @@ COPY Gemfile Gemfile.lock ./
 RUN bundle install
 
 # Run app
-COPY helloworld.rb ./
+COPY src/* ./
 CMD ["./helloworld.rb"]
