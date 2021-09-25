@@ -16,6 +16,15 @@ Scale](https://cloud.google.com/datastore/docs/best-practices#designing_for_scal
 section of Google's "Datastore Best Practices" article for more information
 about key distribution, contention (hot spots), latency, and ramp-up.
 
+## Rollout
+
+Real-world production applications use various upgrade strategies when deploying
+new versions. For example, Cloud Run allows you to specify how much traffic a
+new revision should receive. You may specify that 5% of requests go to the new
+revision for a period of time, and if error rates and other conditions remain
+stable, you could increase the percentage until you're at 100%. If errors are
+encountered, a rollback can be performed.
+
 ## Security
 
 A WAF similar to [Cloud Armor](https://cloud.google.com/armor) would be used
