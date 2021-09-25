@@ -6,7 +6,7 @@ set -xe
 emu_pattern='java .* /opt/google-cloud-sdk/platform/cloud-datastore-emulator/'
 emu_started_by_us=
 
-if ! pgrep -lf "${pattern}"; then
+if ! pgrep -lf "${emu_pattern}"; then
     gcloud beta emulators datastore start &
     emu_started_by_us=true
 fi
@@ -33,5 +33,5 @@ docker run --rm -it \
 
 # Maybe stop emulator
 if [ -n "$emu_started_by_us" ]; then
-    pkill -f "${pattern}"
+    pkill -f "${emu_pattern}"
 fi
