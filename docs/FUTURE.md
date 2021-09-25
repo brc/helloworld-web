@@ -2,10 +2,6 @@
 
 ## Performance
 
-The L7 load balancer contains a global Google anycast address on the front-end
-which will route end-users to the region nearest them. New regions can be added
-to `cloudbuild.yaml` and provisioned very easily as product demand grows.
-
 This web app is not yet optimized for "cold starts," and the
 [WEBrick](https://docs.ruby-lang.org/en/2.4.0/WEBrick.html) HTTP server should
 be replaced with a more performant web server. However, Cloud Run will scale the
