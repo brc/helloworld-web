@@ -25,11 +25,18 @@ Docker image.
 HelloWorld-web is currently deployed to GCP [Cloud
 Run](https://cloud.google.com/run) in two US regions (east and west), as
 controlled by the [`cloudbuild.yaml`](./cloudbuild.yaml) file in this repo
-(more below under the [**CI/CD**](#cicd) section).
+(more below under the [**CI/CD**](#cicd) section). New regions can be added
+to `cloudbuild.yaml` and provisioned very easily as product demand grows.
 
-These services are configured to be accessible _internally_ only (*i.e.*, NOT by
-the public Internet), but are pool members of an external HTTPS (L7) load
-balancer.
+These Run services are only accessible _internally_ (*i.e.*, NOT by the public
+Internet), but they are pool members of an external HTTPS (L7) load balancer.
+
+## Load Balancing
+
+The L7 load balancer uses a global anycast address to route users to the
+nearest region. This address and LB are provisioned by the
+[terraform-helloworld-web](https://github.com/invsblduck/terraform-helloworld-web)
+infrastructure repo.
 
 # CI/CD
 
@@ -59,7 +66,7 @@ Development of this application can occur locally by using the GCP SDK
 Emulator](https://cloud.google.com/datastore/docs/tools/datastore-emulator); see
 the [`./utils/`](./utils/) directory.
 
-# Production considerations
+# Other considerations
 
 A few brief ideas pertaining to real-world applications:
 [./docs/FUTURE.md](./docs/FUTURE.md)
