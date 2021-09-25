@@ -31,56 +31,6 @@ These services are configured to be accessible _internally_ only (*i.e.*, NOT by
 the public Internet), but are pool members of an external HTTPS (L7) load
 balancer.
 
-## Performance
-
-The L7 load balancer contains a global Google anycast address on the front-end
-which will route end-users to the region nearest them. New regions can be added
-to `cloudbuild.yaml` and provisioned very easily as product demand grows.
-
-This web app is not yet optimized for "cold starts," and the
-[WEBrick](https://docs.ruby-lang.org/en/2.4.0/WEBrick.html) HTTP server should
-be replaced with a more performant web server. However, Cloud Run will scale the
-service automatically, increasing the number of replicas horizontally as demand
-increases.
-
-Though the Firestore key is indexed, and Firestore in "datastore mode" can scale
-to millions of operations per second, a real web application would likely
-benefit from a caching tier that sits between it and the database. This may also
-reduce cost at scale. See the [Designing for
-Scale](https://cloud.google.com/datastore/docs/best-practices#designing_for_scale)
-section of Google's "Datastore Best Practices" article for more information
-about key distribution, contention (hot spots), latency, and ramp-up.
-
-## Security
-
-A WAF similar to [Cloud Armor](https://cloud.google.com/armor) would be used
-in protection to help identify and mitigate DDoS attacks, etc.
-
-### GCP Authentication
-
-Authentication logic for Firestore is not handled by this application because
-the default IAM policies used by the Cloud Run Service Agent allow various
-traffic and permissions within the same GCP Project.
-
-### IAM Policies
-
-In a real application environment, more granular IAM policies would be crafted
-and bound to dedicated Service Accounts, yielding a "least privilege" model for
-services which provision and consume other services and resources.
-
-## Pricing
-
-There was not time to conduct forecasting or major comparison for various
-architectures as they relate to operational expenditure (OpEx), though the
-author is highly aware of these considerations at scale.
-
-For example, when does [GKE](https://cloud.google.com/kubernetes-engine) become
-cheaper than Cloud Run (or vice versa)? What about storage systems? Egress
-transit? Sustained-use and/or committment discounts? etc. Many organizations
-form Center Of Excellence (COE) teams who become experts in optimizing cloud
-spend.
-
-
 # CI/CD
 
 [Cloud Build](https://cloud.google.com/build/) is used to build and deploy this
@@ -106,32 +56,10 @@ Run services named `helloworld-prod`, which sit behind the production HTTPS LB.
 
 Development of this application can occur locally by using the GCP SDK
 [Datastore
-Emulator](https://cloud.google.com/datastore/docs/tools/datastore-emulator):
+Emulator](https://cloud.google.com/datastore/docs/tools/datastore-emulator); see
+the [`./utils/`](./utils/) directory.
 
-```
-$ gcloud beta emulators datastore start
-```
+# Production considerations
 
-A container can then be launched in the Docker host network to access `localhost`:
-
-```bash
-# populate environment
-$ `gcloud beta emulators datastore env-init`
-
-# launch container
-$ docker run --rm -it \
-       -v "$PWD":/usr/src/app \
-       -w /usr/src/app \
-       -e DATASTORE_DATASET \
-       -e DATASTORE_EMULATOR_HOST \
-       -e DATASTORE_EMULATOR_HOST_PATH \
-       -e DATASTORE_HOST \
-       -e DATASTORE_PROJECT_ID \
-       --network=host \
-       ruby:2.5-slim bash
-
-root@fe92e3030524:/usr/src/app# bundle install
-```
-
-In a real project, there would be tooling to help achieve a nice workflow (such
-as populating the emulated database with test data).
+A few brief ideas pertaining to real-world applications:
+[./docs/FUTURE.md](./docs/FUTURE.md)
