@@ -4,8 +4,8 @@ This is the web application component of the HelloWorld service. It is a Ruby pr
 
 ## Code
 
-HelloWorld-web is a monolithic procedural script which combines all concerns
-and is difficult to test! Refactoring for a real design would be fairly trivial.
+HelloWorld-web is a monolithic procedural script, which combines all concerns
+and has no tests! Refactoring for a real design would be fairly trivial.
 
 When the root `/` URL is requested, GCP Firestore is queried for a known
 [entity](https://cloud.google.com/datastore/docs/concepts/entities) and the
@@ -26,7 +26,7 @@ HelloWorld-web is currently deployed to GCP [Cloud
 Run](https://cloud.google.com/run) in two US regions (east and west), as
 controlled by the [`cloudbuild.yaml`](./cloudbuild.yaml) file in this repo
 (more below under the [**CI/CD**](#cicd) section). New regions can be added
-to `cloudbuild.yaml` and provisioned very easily as product demand grows.
+to the file and provisioned very easily as product demand grows.
 
 These Run services are only accessible _internally_ (*i.e.*, NOT by the public
 Internet), but they are pool members of an external HTTPS (L7) load balancer.

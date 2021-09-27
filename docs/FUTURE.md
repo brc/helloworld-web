@@ -28,7 +28,7 @@ encountered, a rollback can be performed.
 ## Security
 
 A WAF similar to [Cloud Armor](https://cloud.google.com/armor) would be used
-in protection to help identify and mitigate DDoS attacks, etc.
+in production to help identify and mitigate DDoS attacks, etc.
 
 ### GCP Authentication
 
