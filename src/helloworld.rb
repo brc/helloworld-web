@@ -27,6 +27,7 @@ get '/' do
   if entity = query_db(datastore, 'comm', 'poc-demo')
     entity.properties['msg']
   else
+    #  return an error
     halt 503, 'Database query failed'
   end
 end
